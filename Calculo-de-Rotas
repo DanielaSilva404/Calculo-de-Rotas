@@ -1,0 +1,127 @@
+#include <stdio.h>
+#include <limits.h>
+#include <stdbool.h>
+
+#define V 10
+
+// Array de strings com os nomes dos locais
+const char locais[10][50] = {
+    "Unisantos",
+    "Rodoviaria de Santos",
+    "Museu do Cafe",
+    "Praca da Independencia",
+    "Praia do Gonzaga",
+    "Orquidario Municipal",
+    "Aquario Municipal",
+    "Estadio Vila Belmiro",
+    "Shopping Parque Balneario",
+    "Morro do Jose Menino"
+};
+
+// Matriz com as distâncias diretas entre os locais (0 = sem conexão direta)
+const float distancias[V][V] = {
+    // U     R     M     PI    PG    OM    AM    EVB   SPB   MJM
+    { 0.0,  3.5,  3.5,  2.5,  2.5,  3.0,  4.0,  2.5,  2.5,  5.5 }, // Unisantos
+    { 3.5,  0.0,  1.5,  3.6,  4.0,  3.7,  6.2,  1.0,  3.7,  2.3 }, // Rodoviaria
+    { 3.5,  1.5,  0.0,  1.5,  1.5,  2.5,  5.0,  2.5,  1.5, 10.0 }, // Museu
+    { 2.5,  3.6,  1.5,  0.0,  1.5,  5.5,  5.5,  5.5,  1.5,  5.5 }, // Praca
+    { 2.5,  4.0,  1.5,  1.5,  0.0,  1.5,  5.5,  3.0,  1.5,  3.0 }, // Praia
+    { 3.0,  3.7,  2.5,  5.5,  1.5,  0.0,  1.5,  5.5,  1.5,  3.0 }, // Orquidario
+    { 4.0,  6.2,  5.0,  5.5,  5.5,  1.5,  0.0,  5.5,  3.0,  3.0 }, // Aquario
+    { 2.5,  1.0,  2.5,  5.5,  3.0,  5.5,  5.5,  0.0,  2.2,  5.5 }, // Estadio
+    { 2.5,  3.7,  1.5,  1.5,  1.5,  1.5,  3.0,  2.2,  0.0,  1.5 }, // Shopping
+    { 5.5,  2.3, 10.0,  5.5,  3.0,  3.0,  3.0,  5.5,  1.5,  0.0 }  // Morro
+};
+
+// Função para imprimir o menu de locais disponíveis
+void imprimir_menu() {
+    printf("Locais disponiveis:\n");
+    for (int i = 0; i < V; i++) {
+        printf("%d - %s\n", i, locais[i]);
+    }
+}
+
+// Função para encontrar o vértice com a menor distância que ainda não foi visitado
+int menorDistancia(float dist[], bool visitado[]) {
+    float min = INT_MAX;
+    int indice_min = -1;
+
+    for (int v = 0; v < V; v++) {
+        if (!visitado[v] && dist[v] <= min) {
+            min = dist[v];
+            indice_min = v;
+        }
+    }
+
+    return indice_min;
+}
+
+// Função para imprimir o caminho do local de origem ao destino
+void imprimirCaminho(int anterior[], int destino, int origem) {
+    if (destino == origem) {
+        printf("%s", locais[origem]);
+        return;
+    }
+
+    imprimirCaminho(anterior, anterior[destino], origem);
+    printf(" -> %s", locais[destino]);
+}
+
+// Função que implementa o algoritmo de Dijkstra para encontrar o caminho mais curto
+void dijkstra(int origem, int destino) {
+    float dist[V];
+    bool visitado[V];
+    int anterior[V];
+
+    // Inicializa as distâncias e os estados de visitação
+    for (int i = 0; i < V; i++) {
+        dist[i] = INT_MAX;
+        visitado[i] = false;
+        anterior[i] = -1;
+    }
+
+    dist[origem] = 0;
+
+    // Encontra o caminho mais curto para todos os vértices
+    for (int i = 0; i < V - 1; i++) {
+        int u = menorDistancia(dist, visitado);
+        if (u == -1) break;
+
+        visitado[u] = true;
+
+        // Atualiza as distâncias dos vértices adjacentes
+        for (int v = 0; v < V; v++) {
+            if (!visitado[v] && distancias[u][v] > 0 && dist[u] + distancias[u][v] < dist[v]) {
+                dist[v] = dist[u] + distancias[u][v];
+                anterior[v] = u;
+            }
+        }
+    }
+
+    printf("\nCalculando menor rota...\n");
+    imprimirCaminho(anterior, destino, origem);
+    printf("\nDistancia total: %.2f km\n", dist[destino]);
+}
+
+int main() {
+    int origem, destino;
+
+    // Imprime o menu de locais disponíveis
+    imprimir_menu();
+    printf("\nDigite o numero do local onde voce esta: ");
+    scanf("%d", &origem);
+
+    printf("Digite o numero do local de destino: ");
+    scanf("%d", &destino);
+
+    // Verifica se os locais são válidos
+    if (origem < 0 || origem >= V || destino < 0 || destino >= V) {
+        printf("Local invalido.\n");
+        return 1;
+    }
+
+    // Calcula e imprime o caminho mais curto
+    dijkstra(origem, destino);
+
+    return 0;
+}
